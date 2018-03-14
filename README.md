@@ -5,7 +5,7 @@ Kevin Chan, Brianna Kincaid, Lauren Vanvalkenburg
 
 ### Import/Read (readr)
 
-- Find the webside for NOAA Weather Station buoy 46035 at 57.026 N 177.738 W in the NOAA National Data Buoy Center.
+- Retrieved data from NOAA Weather Station buoy 46035 at 57.026 N 177.738 W in the NOAA National Data Buoy Center
 - http://www.ndbc.noaa.gov/station_history.php?station=46035
 
 ### Tidy/Clean (tidyr)

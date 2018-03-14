@@ -4,6 +4,7 @@
     # Find the webside for NOAA Weather Station buoy 46035 at 57.026 N 177.738 W in the NOAA National Data Buoy Center.
 
 yr1985 <- read_fwf(file = "46035 Data/46035h1985.txt",fwf_widths(c(2,2,2,2,3,4,4,5,5,5,3,6,4,5,5,4),c("YY","MM","DD","hh","WD", "WSPD","GST","WVHT","DPD","APD","MWD","BAR","ATMP","WTMP","DEWP", "VIS")), skip = 1)
+#this is WRONG
 
 ## TIDY/CLEAN (tidyr)
 
