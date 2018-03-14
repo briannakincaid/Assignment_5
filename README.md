@@ -27,10 +27,10 @@ Kevin Chan, Brianna Kincaid, Lauren Vanvalkenburg
 
 The attached file veg1.xlsx was created using the USDA QuickStats system using the following parameters
 
-•	Program: Survey
-•	Sector: Environmental
-•	Group: Vegetables
-•	Commodity: Vegetables Totals, Vegetables Other, Broccoli, Brussels Sprouts, Cauliflower All other parameters were left open.
+- Program: Survey
+- Sector: Environmental
+- Group: Vegetables
+- Commodity: Vegetables Totals, Vegetables Other, Broccoli, Brussels Sprouts, Cauliflower All other parameters were left open.
 
 The data was collected to gain insight about chemical treatments applied to food crops as fertilizer, insecticides, etc. 
 
