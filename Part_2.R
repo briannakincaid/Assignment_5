@@ -70,7 +70,6 @@ View(veg.4 %>%
 
 #ABAMECTIN, BETA-CYFLUTHRIN, BIFENTHRIN, CHLORANTRANILIPROLE, CHLORPYRIFOS, CYFLUTHRIN, CYPERMETHRIN, DIAZINON, DICHLOROPROPENE, DIFLUBENZURON, DIMETHOATE, DISULFOTON, EMAMECTIN BENZOATE, ESFENVALERATE, FENPROPATHRIN, GAMMA-CYHALOTHRIN, IMIDACLOPRID, LAMBDA-CYHALOTHRIN, METHAMIDOPHOS, METHOMYL, NALED, OXYDEMETON-METHYL, PARAQUAT, PERMETHRIN, PRONAMIDE, THIAMETHOXAM, THIODICARB, ZETA-CYPERMETHRIN
 
-
   #Make a table of toxicity measurements (at least LD50 for a single experimental animal). Use this table and what you know about dplyr joins to augment your evaluation of chemical treatments applied to vegetables.
 
 ## VISUALIZE/EXPLORE -- Questions, Variation, Missing Values, Covariation, Patterns and Models  (ggplot2)
