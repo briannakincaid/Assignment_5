@@ -26,16 +26,29 @@ Kevin Chan, Brianna Kincaid, Lauren Vanvalkenburg
 ## Part 2
 
 The attached file veg1.xlsx was created using the USDA QuickStats system using the following parameters
+
 •	Program: Survey
 •	Sector: Environmental
 •	Group: Vegetables
 •	Commodity: Vegetables Totals, Vegetables Other, Broccoli, Brussels Sprouts, Cauliflower All other parameters were left open.
 
-The data was collected to gain insight about chemical treatments applied to food crops as fertilizer, insecticides, etc. Clean, visualize, explore the data. Produce a second slide presentation and Shiny dashboard for the veg1 dataset.
+The data was collected to gain insight about chemical treatments applied to food crops as fertilizer, insecticides, etc. 
 
-Keep in mind that the work we did in class with the veg1 dataset was intended to prepare you for this assignment. There is still work remaining to be done.
+### IMPORT/READ (readr)
+
+### TIDY/CLEAN (tidyr)
+
+### TRANSFORM/ORGANIZE (dplyr)
 
 In class, we noted that some of the chemicals used on our food are classified RESTRICTED USE CHEMICALS. We isolated these chemicals in the veg1 dataset and found technical information about their toxicity in ECOTOX, the Beta version of ECOTOX, and the EPA Chenical Dashboard.
 
 Make a table of toxicity measurements (at least LD50 for a single experimental animal). Use this table and what you know about dplyr joins to augment your evaluation of chemical treatments applied to vegetables.
+
+### VISUALIZE/EXPLORE -- Questions, Variation, Missing Values, Covariation, Patterns and Models  (ggplot2)
+
+### SLIDES AND SHINY
+
+
+
+
 
