@@ -4,49 +4,164 @@ library(tidyverse)
 library(readxl)
 library(stringr)
 
-## IMPORT/READ (readr/readxl) 
-
+## READ
 veg.1 <- read_xlsx("veg1.xlsx")
-cnames.1 <- colnames(veg.1)
+names <- colnames(veg.1)
 
-## TIDY/CLEAN (tidyr)
+## TIDY/CLEAN
 
 # The goal here is to make the vegetable dataset tidy so that we can then more easily work with it. In order to make it tidy, we need to make it so
 # each variable has its own column, each observation has its own row, and each value has its own cell. 
 
 #First, get rid of the columns that only have NA values. 
 
-c <- apply(veg.1, 2, n_distinct) #counts the number of unique values in EACH column 
-d <- names(c[c==1]) #gives a vector of strings that represent the columns that only have one unique value
-e <- names(c[c>1]) #gives a vector of strings that represent the columns that have more than one unique value
+uniquevals <- apply(veg.1, 2, n_distinct) #counts the number of unique values in EACH column 
+names_1 <- names(uniquevals[uniquevals==1]) #gives a vector of strings that represent the columns that only have one unique value
+names_gt1 <- names(uniquevals[uniquevals>1]) #gives a vector of strings that represent the columns that have more than one unique value
 
-veg.2 <- select(veg.1, e) #veg.2 is now a new tibble with only columns that have more than one unique value
-apply(veg.2, 2, n_distinct) #counts the number of unique values in EACH column
+veg.1 <- veg.1 %>%
+  select(names_gt1) %>%
+  rename(
+    Geo = `Geo Level`, 
+    State = `State ANSI`,
+    Data = `Data Item`,
+    Category = `Domain Category`
+  )
 
-veg.3 <- rename(veg.2, 
-              Geo = `Geo Level`, 
-              State = `State ANSI`,
-              Data = `Data Item`,
-              Category = `Domain Category`)
+# DOMAIN COLUMN
 
-unique(veg.3[,"Commodity"])
-unique(veg.3[,"Data"]) %>% print(n=60)
-unique(veg.3[,"Domain"])
-unique(veg.3[,"Category"])
-unique(veg.3[,"Value"])
+unique(veg.1[,"Domain"])
+#Unique Values for Domain:
+# CHEMICAL, FUNGICIDE                 
+# CHEMICAL, HERBICIDE                 
+# CHEMICAL, INSECTICIDE               
+# CHEMICAL, OTHER                     
+# RESTRICTED USE CHEMICAL, HERBICIDE  
+# RESTRICTED USE CHEMICAL, INSECTICIDE
+# RESTRICTED USE CHEMICAL, OTHER      
+# PRACTICE, AVOIDANCE                 
+# PRACTICE, MONITORING                
+# PRACTICE, PREVENTION                
+# PRACTICE, SUPPRESSION               
+# TOTAL                               
+# FERTILIZER 
 
-veg.4 <- veg.3 %>%
-  separate(Domain, into = c("Type1", "Type2"), sep = ", ") %>%
-  separate(Category, into = c("Discard", "Name"), sep = ": ") %>%
-  select(-Discard) %>%
-  separate(Name, into = c("Name", "Code"), sep = "=") %>% 
-  separate(Name, into = c("Discard", "Name"), sep = 1) %>%
-  select(-Discard) %>%
-  separate(Code, into = c("Code", "Discard"), sep = -1) %>%
+#The only two that don't have two values are TOTAL and FERTILIZER 
+
+veg.3 <- veg.1 %>%
+  filter(Domain == "TOTAL" | Domain == "FERTILIZER") %>% 
+  mutate(DomainCategory = NA) %>%
+  select(Year, Geo, State, Region, Commodity, Data, Domain, DomainCategory, Category, Value)
+
+veg.1 <- veg.1 %>%
+  filter(Domain != "TOTAL" & Domain != "FERTILIZER") %>%
+  separate(Domain, into = c("Domain", "DomainCategory"), sep = ", ")
+
+veg.1 <- rbind(veg.1, veg.3)
+  
+unique(veg.1[,"Domain"])
+  
+#Unique Values for Domain:
+# CHEMICAL               
+# RESTRICTED USE CHEMICAL
+# PRACTICE               
+# TOTAL                  
+# FERTILIZER
+
+unique(veg.1[,"DomainCategory"])
+
+#Unique values for DomainCategory
+# FUNGICIDE  
+# HERBICIDE  
+# INSECTICIDE
+# OTHER      
+# AVOIDANCE  
+# MONITORING 
+# PREVENTION 
+# SUPPRESSION
+# NA
+
+       
+# CATEGORY COLUMN
+View(unique(veg.1[,"Category"]))
+
+#Only one value does not have : -- NOT SPECIFIED
+
+veg.3 <- veg.1 %>%
+  filter(Category == "NOT SPECIFIED") %>%
+  rename("Description" = "Category") %>%
+  mutate(Description = NA)
+
+veg.1 <- veg.1 %>%
+  filter(Category != "NOT SPECIFIED") %>%
+  separate(Category, into = c("Discard", "Description"), sep = ": ") %>%
   select(-Discard)
 
-unique(veg.4[,"Type1"])
-unique(veg.4[,"Type2"])
+veg.1 <- rbind(veg.1, veg.3)
+
+# NAME COLUMN
+View(unique(veg.1[,"Name"]))
+
+veg.4 <- veg.1 %>%
+  filter(grepl("=",Description)) %>% #this keep only the rows that have the form NAME = CODE
+  separate(Description, into = c("Description", "Description2"), sep = "=") %>%
+  mutate(
+    Description = trimws(Description, "b"),
+    Description2 = trimws(Description2, "b")) %>%
+  separate(Description, into = c("Discard", "Description"), sep = 1) %>%
+  separate(Description2, into = c("Description2", "Discard2"), sep = -1) %>%
+  select(-Discard, -Discard2)
+
+veg.5 <- veg.1 %>%
+  filter(!grepl("=",Description)) %>%
+  mutate(
+    Description = trimws(Description, "b")) %>%
+  separate(Description, into = c("Discard", "Description"), sep = 1) %>%
+  separate(Description, into = c("Description", "Discard2"), sep = -1) %>%
+  select(-Discard, -Discard2) %>%
+  mutate(Description2 = NA) %>%
+  select(Year, Geo, State, Region, Commodity, Data, Domain, DomainCategory, Description, Description2, Value)
+
+veg.6 <- veg.5 %>%
+  filter(grepl("-",Description)) %>%
+  select(-Description2) %>%
+  filter(Description != "NO-TILL OR MINIMUM TILL USED") %>%
+  separate(Description, into = c("Description", "Description2"), sep = "-") %>%
+  mutate(Description = trimws(Description, "b")) 
+
+veg.7 <- filter(veg.5, Description == "NO-TILL OR MINIMUM TILL USED")
+veg.8 <- filter(veg.5, !grepl("-",Description))
+
+veg.1 <- rbind(veg.6,veg.7,veg.8)
+
+## DATA COLUMN
+
+#R can't handle the entire dataset into spread.. let's break it down
+unique(veg.1[,"Domain"])
+
+veg.1.practice <- veg.1 %>%
+  filter(Domain == "PRACTICE")
+veg.1.chemical <- veg.1 %>% 
+  filter(Domain == "CHEMICAL")
+veg.1.fertilizer <- veg.1 %>%
+  filter(Domain == "FERTILIZER")
+veg.1.totals <- veg.1 %>%
+  filter(Domain == "TOTAL")
+
+unique(veg.1.practice[,"Data"])
+
+spread(veg.1.practice, key = Data, value = Value)
+
+
+
+
+
+
+unique(veg.1[,"Geo"])
+unique(veg.1[,"Region"])
+unique(veg.1[,"Value"])
+unique(veg.1[,"Commodity"])
+unique(veg.1[,"Data"]) %>% print(n=60)
 
 ## TRANSFORM/ORGANIZE (dplyr)
 
