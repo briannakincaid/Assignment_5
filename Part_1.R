@@ -413,7 +413,7 @@ ggplot(data = temperature_summary_noon) +
   geom_line(mapping = aes(x = Year, y = AirTempMean, color = "Air Temperature")) +
   geom_line(mapping = aes(x = Year, y = WaterTempMean, color = "Water Temperature")) +
   xlab("Year") +
-  ylab("Temperature")
+  ylab("Mean Temperature (By Year)")
 
 #What statistical methods can you use to test if the change is statistically significant? 
 
