@@ -8,12 +8,13 @@ library(stringr)
 veg.1 <- read_xlsx("veg1.xlsx")
 names <- colnames(veg.1)
 
+
 ## TIDY/CLEAN
 
 # The goal here is to make the vegetable dataset tidy so that we can then more easily work with it. In order to make it tidy, we need to make it so
 # each variable has its own column, each observation has its own row, and each value has its own cell. 
 
-#First, get rid of the columns that only have NA values. 
+##### First, get rid of the columns that only have NA values. 
 
 uniquevals <- apply(veg.1, 2, n_distinct) #counts the number of unique values in EACH column 
 names_1 <- names(uniquevals[uniquevals==1]) #gives a vector of strings that represent the columns that only have one unique value
@@ -28,39 +29,43 @@ veg.1 <- veg.1 %>%
     Category = `Domain Category`
   )
 
-# DOMAIN COLUMN
+View(veg.1)
+colnames(veg.1)
+
+##### Then, clean (separate) the columns one at a time 
+
+########## DOMAIN COLUMN
 
 unique(veg.1[,"Domain"])
-#Unique Values for Domain:
-# CHEMICAL, FUNGICIDE                 
-# CHEMICAL, HERBICIDE                 
-# CHEMICAL, INSECTICIDE               
-# CHEMICAL, OTHER                     
-# RESTRICTED USE CHEMICAL, HERBICIDE  
-# RESTRICTED USE CHEMICAL, INSECTICIDE
-# RESTRICTED USE CHEMICAL, OTHER      
-# PRACTICE, AVOIDANCE                 
-# PRACTICE, MONITORING                
-# PRACTICE, PREVENTION                
-# PRACTICE, SUPPRESSION               
-# TOTAL                               
-# FERTILIZER 
 
-#The only two that don't have two values are TOTAL and FERTILIZER 
+# The only two that don't have two values are TOTAL and FERTILIZER 
+# The rest are obviously broken up into Domain and SubDomain
 
-veg.3 <- veg.1 %>%
+# Let's filter out the TOTAL and FERTILIZER rows for now. 
+
+veg.2 <- veg.1 %>%
   filter(Domain == "TOTAL" | Domain == "FERTILIZER") %>% 
-  mutate(DomainCategory = NA) %>%
-  select(Year, Geo, State, Region, Commodity, Data, Domain, DomainCategory, Category, Value)
+  mutate(SubDomain = NA) %>%
+  select(Year, Geo, State, Region, Commodity, Data, Domain, SubDomain, Category, Value)
+
+# veg.2 now holds the rows that have TOTAL or FERTILIZER in the Domain column and NA in the SubDomain column.
+# We'll bind this back with the whole data set later. 
+
+# Let's look at all the other rows now. 
 
 veg.1 <- veg.1 %>%
   filter(Domain != "TOTAL" & Domain != "FERTILIZER") %>%
-  separate(Domain, into = c("Domain", "DomainCategory"), sep = ", ")
+  separate(Domain, into = c("Domain", "SubDomain"), sep = ", ")
 
-veg.1 <- rbind(veg.1, veg.3)
-  
+# veg.1 now just holds the rows that don't have TOTAL or FERTILIZER in the Domain column and 
+# the Domain column has been separated into Domain and SubDomain
+
+#Now, let's bind veg.2 back on. 
+
+veg.1 <- rbind(veg.1, veg.2)
+
 unique(veg.1[,"Domain"])
-  
+
 #Unique Values for Domain:
 # CHEMICAL               
 # RESTRICTED USE CHEMICAL
@@ -68,9 +73,9 @@ unique(veg.1[,"Domain"])
 # TOTAL                  
 # FERTILIZER
 
-unique(veg.1[,"DomainCategory"])
+unique(veg.1[,"SubDomain"])
 
-#Unique values for DomainCategory
+#Unique values for SubDomain
 # FUNGICIDE  
 # HERBICIDE  
 # INSECTICIDE
@@ -81,29 +86,43 @@ unique(veg.1[,"DomainCategory"])
 # SUPPRESSION
 # NA
 
-       
-# CATEGORY COLUMN
+
+########## CATEGORY COLUMN
 unique(veg.1[,"Category"])
 
-#Only one value does not have ":" -- NOT SPECIFIED
+# Most of the rows are in the form DOMAIN, SUBDOMAIN: (Description)
+# The only rows that are not in this form have the value "NOT SPECIFIED" in the Category column
+
+#Let's filter so we just have the rows with "NOT SPECIFIED" in the Category column
 
 veg.3 <- veg.1 %>%
   filter(Category == "NOT SPECIFIED") %>%
   rename("Description" = "Category") %>%
   mutate(Description = NA)
 
+# veg.3 now just holds the rows that now have NA in the Description column. We'll bind these back onto
+# the whole data set later. 
+
+unique(veg.3[,"Domain"])
+#These rows are all just TOTALS
+
 veg.1 <- veg.1 %>%
   filter(Category != "NOT SPECIFIED") %>%
   separate(Category, into = c("Discard", "Description"), sep = ": ") %>%
   select(-Discard)
 
+# veg.1 now holds the rows that were of the form DOMAIN, SUBDOMAIN: (Description) in the Category column.
+# We separted DOMAIN, SUBDOMAIN and (Description) and renamed the column with (Description) to "Description"
+
+#Let's bind them back together
 veg.1 <- rbind(veg.1, veg.3)
 
-# NAME COLUMN
+########## NAME COLUMN (CATEGORY COLUMN, PT. 2)
 unique(veg.1[,"Description"])
 
+# We want to keep only the rows that have the form NAME = NUMBER and separate it into two separate 
+# description files 
 
-#this keep only the rows that have the form NAME = CODE
 veg.4 <- veg.1 %>%
   filter(grepl("=",Description)) %>% 
   separate(Description, into = c("Description", "Description2"), sep = "=") %>%
@@ -114,43 +133,45 @@ veg.4 <- veg.1 %>%
   separate(Description2, into = c("Description2", "Discard2"), sep = -1) %>%
   select(-Discard, -Discard2)
 
-  
+#veg.4 now holds all the rows that had the form NAME = NUMBER, now separated into two Description columns
 
-#this keeps only the rows that DONT have the form NAME = CODE
+#Now let's work with all the other rows
 veg.5 <- veg.1 %>%
   filter(!grepl("=",Description)) %>%
   mutate(
     Description = trimws(Description, "b")) %>%
-  separate(Description, into = c("Discard", "Description"), sep = 1) %>%
+  separate(Description, into = c("Discard", "Description"), sep = 1) %>% 
   separate(Description, into = c("Description", "Discard2"), sep = -1) %>%
   select(-Discard, -Discard2) %>%
   mutate(Description2 = NA) %>%
-  select(Year, Geo, State, Region, Commodity, Data, Domain, DomainCategory, Description, Description2, Value)
+  select(Year, Geo, State, Region, Commodity, Data, Domain, SubDomain, Description, Description2, Value)
 
+veg.6 <- veg.5 %>%
+  filter(grepl("-",Description)) %>%
+  select(-Description2) %>%
+  filter(Description != "NO-TILL OR MINIMUM TILL USED") %>%
+  separate(Description, into = c("Description", "Description2"), sep = "-") %>%
+  mutate(Description = trimws(Description, "b")) 
 
-  veg.6 <- veg.5 %>%
-    filter(grepl("-",Description)) %>%
-    select(-Description2) %>%
-    filter(Description != "NO-TILL OR MINIMUM TILL USED") %>%
-    separate(Description, into = c("Description", "Description2"), sep = "-") %>%
-    mutate(Description = trimws(Description, "b")) 
-  
-  veg.7 <- filter(veg.5, Description == "NO-TILL OR MINIMUM TILL USED")
-  veg.8 <- filter(veg.5, !grepl("-",Description))
+veg.7 <- filter(veg.5, Description == "NO-TILL OR MINIMUM TILL USED")
+veg.8 <- filter(veg.5, !grepl("-",Description))
 
 veg.1 <- rbind(veg.6,veg.7,veg.8, veg.4)
 
-## DATA COLUMN
-
-unique(veg.1[,"Data"]) %>% print(n=28)
-count(unique(veg.1[,"Data"]))
+########## DATA COLUMN
 
 veg.1 <- veg.1 %>%
   separate(Data, into = c("Discard","Data"), sep = "-") %>%
   select(-Discard) %>%
-  mutate(Data = trimws(Data, "b"))
+  mutate(Data = trimws(Data, "l"))
 
-#######################################################
+unique_data <- unique(veg.1[,"Data"])
+
+#veg.1 <- spread(veg.1, key = Data, value = Value)
+
+#The spread is not working on the whole data set (R crashes). Let's try breaking it down by Commodity. 
+
+################## Brussel Sprouts
 
 BrusselsSprouts <- filter(veg.1, Commodity == "BRUSSELS SPROUTS")
 
@@ -160,82 +181,207 @@ BrusselsSprouts <- BrusselsSprouts %>%
   select(-Commodity, -Region, -State) %>% 
   spread(key = Data, value = Value)
 
-#######################################################
+#Works for Brussel Sprouts!!
+
+
+################## VEGETABLE TOTALS
 
 VegetablesTotals <- filter(veg.1, Commodity == "VEGETABLE TOTALS")
 count(unique(VegetablesTotals[,"Data"]))
 
-unique(VegetablesTotals[,"Year"])
+#VegetablesTotals <- Vegetables %>% 
+  #spread(key = Data, value = Value)
 
-############## 2006
-VegetablesTotals.2006 <- VegetablesTotals %>%
-  filter(Year == 2006)
+#Does not work for Vegetable Totals.
 
-count(unique(VegetablesTotals.2006[,"Data"]))
+#It seems that the data is too large for spread to handle, and there is some sort of memory problem.
+#We could break it down into tibbles of similar size to BrusselsSprouts, but that may be too tedius.
+#We can get the same result as spread() by the doing the following (which is still tedius, and I would
+#still much rather use spread to do this, but again, it's not working...):
 
-unique(VegetablesTotals.2006[,"DomainCategory"])
+####################### DIY spread()
 
-VegetablesTotals.2006.mon <- VegetablesTotals.2006 %>%
-  filter(DomainCategory == "MONITORING")
+veg.1.1 <- veg.1 %>%
+  filter(Data == "PEST MGMT, MEASURED IN PCT OF AREA PLANTED") %>%
+  select(-Data) %>%
+  rename("PEST MGMT, MEASURED IN PCT OF AREA PLANTED" = Value)
 
-VegetablesTotals.2006.pre <- VegetablesTotals.2006 %>%
-  filter(DomainCategory == "PREVENTION") 
+veg.1.2 <- veg.1 %>%
+  filter(Data == "PEST MGMT, MEASURED IN PCT OF OPERATIONS") %>%
+  select(-Data) %>%
+  rename("PEST MGMT, MEASURED IN PCT OF OPERATIONS" = Value)
 
-VegetablesTotals.2006.avo <- VegetablesTotals.2006 %>%
-  filter(DomainCategory == "AVOIDANCE")
-VegetablesTotals.2006.sup <- VegetablesTotals.2006 %>%
-  filter(DomainCategory == "SUPPRESSION")
+veg.1.3 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB" = Value)
 
-############## 2010
-VegetablesTotals.2010 <- VegetablesTotals %>%
-  filter(Year == 2010)
+veg.1.4 <- veg.1 %>%
+  filter(Data == "TREATED, MEASURED IN PCT OF AREA PLANTED, AVG") %>%
+  select(-Data) %>%
+  rename("TREATED, MEASURED IN PCT OF AREA PLANTED, AVG" = Value)
 
-count(unique(VegetablesTotals.2010[,"Data"]))
+veg.1.5 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, AVG") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, AVG" = Value)
 
-############## 2014
-VegetablesTotals.2014 <- VegetablesTotals %>%
-  filter(Year == 2014)
+veg.1.6 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / YEAR, AVG ") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / YEAR, AVG " = Value)
 
-count(unique(VegetablesTotals.2014[,"Data"]))
+veg.1.7 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN NUMBER, AVG") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN NUMBER, AVG" = Value)
 
-############## 2016
-VegetablesTotals.2016 <- VegetablesTotals %>%
-  filter(Year == 2016)
+veg.1.8 <- veg.1 %>%
+  filter(Data == "ACRES POLLINATED, PAID BASIS") %>%
+  select(-Data) %>%
+  rename("ACRES POLLINATED, PAID BASIS" = Value)
 
-count(unique(VegetablesTotals.2016[,"Data"]))
+veg.1.9 <- veg.1 %>%
+  filter(Data == "POLLINATION, MEASURED IN $ / ACRE") %>%
+  select(-Data) %>%
+  rename("POLLINATION, MEASURED IN $ / ACRE" = Value)
 
-#######################################################
+veg.1.10 <- veg.1 %>%
+  filter(Data == "POLLINATION, MEASURED IN $ / COLONY") %>%
+  select(-Data) %>%
+  rename("POLLINATION, MEASURED IN $ / COLONY" = Value)
 
-VegetablesOther <- filter(veg.1, Commodity == "VEGETABLES, OTHER")
+veg.1.11 <- veg.1 %>%
+  filter(Data == "POLLINATION, MEASURED IN COLONIES") %>%
+  select(-Data) %>%
+  rename("POLLINATION, MEASURED IN COLONIES" = Value)
 
-#######################################################
+veg.1.12 <- veg.1 %>%
+  filter(Data == "VALUE OF POLLINATION, MEASURED IN $") %>%
+  select(-Data) %>%
+  rename("VALUE OF POLLINATION, MEASURED IN $" = Value)
 
-Broccoli <- filter(veg.1, Commodity == "BROCCOLI")
+veg.1.13 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, 10TH PERCENTILE") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, 10TH PERCENTILE" = Value)
 
-#######################################################
+veg.1.14 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, 90TH PERCENTILE") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, 90TH PERCENTILE" = Value)
 
-Cauliflower <- filter(veg.1, Commodity == "CAULIFLOWER")
+veg.1.15 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, CV PCT") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, CV PCT" = Value)
 
-#######################################################
+veg.1.16 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, MEDIAN") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, MEDIAN" = Value)
 
+veg.1.17 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / YEAR, 10TH PERCENTILE") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / YEAR, 10TH PERCENTILE" = Value)
 
-unique(veg.1[,"Geo"])
-unique(veg.1[,"Region"])
-unique(veg.1[,"Value"])
-unique(veg.1[,"Commodity"])
-unique(veg.1[,"Data"]) %>% print(n=60)
+veg.1.18 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / YEAR, 90TH PERCENTILE") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / YEAR, 90TH PERCENTILE" = Value)
 
+veg.1.19 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / YEAR, CV PCT") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / YEAR, CV PCT" = Value)
 
+veg.1.20 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN LB / ACRE / YEAR, MEDIAN") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN LB / ACRE / YEAR, MEDIAN" = Value)
 
+veg.1.21 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN NUMBER, 10TH PERCENTILE") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN NUMBER, 10TH PERCENTILE" = Value)
 
-## TRANSFORM/ORGANIZE (dplyr)
+veg.1.22 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN NUMBER, 90TH PERCENTILE") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN NUMBER, 90TH PERCENTILED" = Value)
+
+veg.1.23 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN NUMBER, CV PCT") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN NUMBER, CV PCT" = Value)
+
+veg.1.24 <- veg.1 %>%
+  filter(Data == "APPLICATIONS, MEASURED IN NUMBER, MEDIAN") %>%
+  select(-Data) %>%
+  rename("APPLICATIONS, MEASURED IN NUMBER, MEDIAN" = Value)
+
+veg.1.25 <- veg.1 %>%
+  filter(Data == "TREATED, MEASURED IN PCT OF AREA PLANTED, 10TH PERCENTILE") %>%
+  select(-Data) %>%
+  rename("TREATED, MEASURED IN PCT OF AREA PLANTED, 10TH PERCENTILE" = Value)
+
+veg.1.26 <- veg.1 %>%
+  filter(Data == "TREATED, MEASURED IN PCT OF AREA PLANTED, 90TH PERCENTILE") %>%
+  select(-Data) %>%
+  rename("TREATED, MEASURED IN PCT OF AREA PLANTED, 90TH PERCENTILE" = Value)
+
+veg.1.27 <- veg.1 %>%
+  filter(Data == "TREATED, MEASURED IN PCT OF AREA PLANTED, CV PCT") %>%
+  select(-Data) %>%
+  rename("TREATED, MEASURED IN PCT OF AREA PLANTED, CV PCT" = Value)
+
+veg.1.28 <- veg.1 %>%
+  filter(Data == "TREATED, MEASURED IN PCT OF AREA PLANTED, MEDIAN") %>%
+  select(-Data) %>%
+  rename("TREATED, MEASURED IN PCT OF AREA PLANTED, MEDIAN" = Value)
+
+veg.1 <- full_join(veg.1.1,veg.1.2)
+veg.1 <- full_join(veg.1, veg.1.3)
+veg.1 <- full_join(veg.1, veg.1.4)
+veg.1 <- full_join(veg.1, veg.1.5)
+veg.1 <- full_join(veg.1, veg.1.6)
+veg.1 <- full_join(veg.1, veg.1.7)
+veg.1 <- full_join(veg.1, veg.1.8)
+veg.1 <- full_join(veg.1, veg.1.9)
+veg.1 <- full_join(veg.1, veg.1.10)
+veg.1 <- full_join(veg.1, veg.1.11)
+veg.1 <- full_join(veg.1, veg.1.12)
+veg.1 <- full_join(veg.1, veg.1.13)
+veg.1 <- full_join(veg.1, veg.1.14)
+veg.1 <- full_join(veg.1, veg.1.15)
+veg.1 <- full_join(veg.1, veg.1.16)
+veg.1 <- full_join(veg.1, veg.1.17)
+veg.1 <- full_join(veg.1, veg.1.18)
+veg.1 <- full_join(veg.1, veg.1.19)
+veg.1 <- full_join(veg.1, veg.1.20)
+veg.1 <- full_join(veg.1, veg.1.21)
+veg.1 <- full_join(veg.1, veg.1.22)
+veg.1 <- full_join(veg.1, veg.1.23)
+veg.1 <- full_join(veg.1, veg.1.24)
+veg.1 <- full_join(veg.1, veg.1.25)
+veg.1 <- full_join(veg.1, veg.1.26)
+veg.1 <- full_join(veg.1, veg.1.27)
+veg.1 <- full_join(veg.1, veg.1.28)
+
+View(veg.1)
+
+#veg.1 is now TIDY!!!
+
+## TRANSFORM/ORGANIZE
 
 #In class, we noted that some of the chemicals used on our food are classified RESTRICTED USE CHEMICALS. We isolated these chemicals in the veg1 dataset and found technical information about their toxicity in ECOTOX, the Beta version of ECOTOX, and the EPA Chenical Dashboard.
 
 RestrictedUseChemicals <- veg.1 %>%
-  filter(Domain == "RESTRICTED USE CHEMICAL")
+  filter(Domain == "RESTRICTED USE CHEMICAL") %>%
+  select(-State, -Geo, -Region) #They're all the same
 
-unique(RestrictedUseChemicals[,"Description"]) %>% print(n=60)
+unique(RestrictedUseChemicals[,"Description"]) %>% print(n=28)
 #There are 28 restricted use chemicals
 # PARAQUAT
 # ABAMECTIN
@@ -266,72 +412,22 @@ unique(RestrictedUseChemicals[,"Description"]) %>% print(n=60)
 # METHAMIDOPHOS
 # THIODICARB
 
-unique(RestrictedUseChemicals[,"Year"])
-
-############## 2006
-RestrictedUseChemicals.2006 <- RestrictedUseChemicals %>%
-  filter(Year == 2006) %>%
-  spread(key = Data, value = Value)
-
-############## 2010
-RestrictedUseChemicals.2010 <- RestrictedUseChemicals %>%
-  filter(Year == 2010) %>%
-  spread(key = Data, value = Value)
-
-############## 2014
-RestrictedUseChemicals.2014 <- RestrictedUseChemicals %>%
-  filter(Year == 2014) %>%
-  spread(key = Data, value = Value)
-
-############## 2016
-RestrictedUseChemicals.2016 <- RestrictedUseChemicals %>%
-  filter(Year == 2016) %>%
-  spread(key = Data, value = Value)
-
-RestrictedUseChemicals <- rbind(
-  RestrictedUseChemicals.2006, 
-  RestrictedUseChemicals.2010, 
-  RestrictedUseChemicals.2014, 
-  RestrictedUseChemicals.2016)
+uniquevals2 <- apply(RestrictedUseChemicals, 2, n_distinct) #counts the number of unique values in EACH column 
+names2_1 <- names(uniquevals2[uniquevals2==1]) #gives a vector of strings that represent the columns that only have one unique value
+names2_gt1 <- names(uniquevals2[uniquevals2>1]) #gives a vector of strings that represent the columns that have more than one unique value
 
 RestrictedUseChemicals <- RestrictedUseChemicals %>%
-  select(-State)
-
-colnames(RestrictedUseChemicals)[9:13]
-# "APPLICATIONS, MEASURED IN LB"
-# "APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, AVG"
-# "APPLICATIONS, MEASURED IN LB / ACRE / YEAR, AVG"
-# "APPLICATIONS, MEASURED IN NUMBER, AVG"
-# "TREATED, MEASURED IN PCT OF AREA PLANTED, AVG"
-
-colnames(RestrictedUseChemicals) <- c(
-  "Year",                                                 
-  "Geo",                                                  
-  "Region",                                               
-  "Commodity",                                            
-  "Domain",                                                
-  "DomainCategory",                                       
-  "Description",                                          
-  "Description2",
-  "Applications (lb)", 
-  "Average Applications(lb/acre/application)", 
-  "Average Applications(lb/acre/year)", 
-  "Average Number of Applications", 
-  "Percent Treated")
-
-RestrictedUseChemicals <- RestrictedUseChemicals %>%
-  mutate(
-    Year = as.numeric(Year),                                                 
-    `Applications (lb)` = as.numeric(`Applications (lb)`), 
-    `Average Applications(lb/acre/application)` = as.numeric(`Average Applications(lb/acre/application)`), 
-    `Average Applications(lb/acre/year)` = as.numeric(`Average Applications(lb/acre/year)`),
-    `Average Number of Applications` = as.numeric(`Average Number of Applications`),
-    `Percent Treated` = as.numeric(`Percent Treated`))
+  select(names2_gt1) %>%
+  rename(
+    `Applications (lb)` = `APPLICATIONS, MEASURED IN LB`,                        
+    `Percent Treated` =`TREATED, MEASURED IN PCT OF AREA PLANTED, AVG`,        
+    `Average Applications (lb/acre)` =`APPLICATIONS, MEASURED IN LB / ACRE / APPLICATION, AVG`,
+    `Average Number of Applications` =`APPLICATIONS, MEASURED IN NUMBER, AVG`
+  )
 
 #Make a table of toxicity measurements (at least LD50 for a single experimental animal). 
 #Use this table and what you know about dplyr joins to augment your evaluation of 
 #chemical treatments applied to vegetables.
-
 
 toxicity <- read_xlsx("toxicity.xlsx")
 
@@ -340,12 +436,6 @@ toxicity <- toxicity %>%
 
 RestrictedUseChemicals.tox <- left_join(RestrictedUseChemicals, toxicity, by = "Description")
 
-## VISUALIZE/EXPLORE -- Questions, Variation, Missing Values, Covariation, Patterns and Models  (ggplot2)
+## VISUALIZE/EXPLORE
 
 ## SLIDES AND SHINY
-
-
-
-
-
-
