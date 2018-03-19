@@ -5,7 +5,8 @@ library(readxl)
 library(stringr)
 
 ## READ
-veg.1 <- read_xlsx("veg1.xlsx")
+veg.1 <- read_xlsx("veg1.xlsx", na = "(D)")
+#D = Withheld to avoid  disclosing data for individual  operations. = NA 
 names <- colnames(veg.1)
 
 
@@ -164,6 +165,19 @@ veg.1 <- veg.1 %>%
   separate(Data, into = c("Discard","Data"), sep = "-") %>%
   select(-Discard) %>%
   mutate(Data = trimws(Data, "l"))
+
+#Before we go on, there are (Z) values in the Value column
+
+#Z = Less than half the rounding unit. = 0
+
+veg.1.z <- veg.1 %>%
+  filter(Value == "(Z)") %>%
+  mutate(Value = 0)
+
+veg.1 <- rbind(veg.1.z, filter(veg.1, Value != "(Z)"))
+
+veg.1 <- veg.1 %>%
+  mutate(Value = as.numeric(Value))
 
 unique_data <- unique(veg.1[,"Data"])
 
@@ -369,8 +383,6 @@ veg.1 <- full_join(veg.1, veg.1.26)
 veg.1 <- full_join(veg.1, veg.1.27)
 veg.1 <- full_join(veg.1, veg.1.28)
 
-View(veg.1)
-
 #veg.1 is now TIDY!!!
 
 ## TRANSFORM/ORGANIZE
@@ -425,9 +437,14 @@ RestrictedUseChemicals <- RestrictedUseChemicals %>%
     `Average Number of Applications` =`APPLICATIONS, MEASURED IN NUMBER, AVG`
   )
 
+RestrictedUseChemicals$Year <- as.character(RestrictedUseChemicals$Year)
+
 #Make a table of toxicity measurements (at least LD50 for a single experimental animal). 
 #Use this table and what you know about dplyr joins to augment your evaluation of 
 #chemical treatments applied to vegetables.
+
+#https://actorws.epa.gov/actorws/toxval/v01/toxval?casrn=80-05-7
+
 
 toxicity <- read_xlsx("toxicity.xlsx")
 
@@ -436,6 +453,56 @@ toxicity <- toxicity %>%
 
 RestrictedUseChemicals.tox <- left_join(RestrictedUseChemicals, toxicity, by = "Description")
 
+RestrictedUseChemicals.tox <- RestrictedUseChemicals.tox %>% 
+  select(Year, Commodity, SubDomain, Description, CAS, 
+         `Applications (lb)`, Species, `Exposure Type`, 
+         Effect, `Observation Duration`, Dose)
+
+#Still have to add in toxicity values 
+
 ## VISUALIZE/EXPLORE
+
+ggplot(data = RestrictedUseChemicals) + 
+  geom_bar(
+    mapping = aes(x = Commodity, y = `Percent Treated`), stat = "summary")
+
+ggplot(data = RestrictedUseChemicals) + 
+  geom_bar(
+    mapping = aes(x = Commodity, y = `Percent Treated`, fill = Description), 
+    stat = "summary",
+    position = "dodge")
+
+ggplot(data = RestrictedUseChemicals) + 
+  geom_bar(
+    mapping = aes(x = Commodity, y = `Applications (lb)`, fill = Description), 
+    stat = "summary",
+    position = "dodge")
+
+ggplot(data = RestrictedUseChemicals) + 
+  geom_bar(
+    mapping = aes(x = Commodity, y = `Average Applications (lb/acre)`, fill = Description), 
+    stat = "summary",
+    position = "dodge")
+
+ggplot(data = RestrictedUseChemicals) + 
+  geom_bar(
+    mapping = aes(x = Commodity, y = `Average Number of Applications`, fill = Description), 
+    stat = "summary",
+    position = "dodge")
+
+ggplot(data = RestrictedUseChemicals) + 
+  geom_bar(
+    mapping = aes(x = Year, y = `Applications (lb)`, fill = Description), 
+    stat = "summary",
+    position = "dodge")
+
+ggplot(data = RestrictedUseChemicals) + 
+  geom_bar(
+    mapping = aes(x = Commodity, y = `Applications (lb)`, fill = Year), 
+    stat = "summary",
+    position = "dodge")
+
+#Do we need visualizations for whole table?? 
+
 
 ## SLIDES AND SHINY
