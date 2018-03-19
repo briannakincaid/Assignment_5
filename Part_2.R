@@ -443,64 +443,96 @@ RestrictedUseChemicals$Year <- as.character(RestrictedUseChemicals$Year)
 #Use this table and what you know about dplyr joins to augment your evaluation of 
 #chemical treatments applied to vegetables.
 
-#https://actorws.epa.gov/actorws/toxval/v01/toxval?casrn=80-05-7
-
+#Experimental Info From ECOTOX
 
 toxicity <- read_xlsx("toxicity.xlsx")
-
 toxicity <- toxicity %>%
   rename(Description = Name)
 
-RestrictedUseChemicals.tox <- left_join(RestrictedUseChemicals, toxicity, by = "Description")
+#RfD values from EPA Dashboard
 
-RestrictedUseChemicals.tox <- RestrictedUseChemicals.tox %>% 
-  select(Year, Commodity, SubDomain, Description, CAS, 
-         `Applications (lb)`, Species, `Exposure Type`, 
-         Effect, `Observation Duration`, Dose)
+#RfD is an estimate (with uncertainty spanning perhaps an order of magnitude) of
+#a daily exposure to the human population (including sensitive subgroups) that
+#is likely to be without an appreciable risk of deleterious effects during a
+#lifetime.
 
-#Still have to add in toxicity values 
+toxval <- read_xlsx("toxval.xlsx")
+RestrictedUseChemicals <- RestrictedUseChemicals %>%
+  left_join( toxval, by = "Description") %>%
+  select(-Units)
 
 ## VISUALIZE/EXPLORE
 
 ggplot(data = RestrictedUseChemicals) + 
-  geom_bar(
-    mapping = aes(x = Commodity, y = `Percent Treated`), stat = "summary")
+  geom_bar(mapping = aes(x = Commodity, y = `Percent Treated`), fill = "red", stat = "summary") +
+  ggtitle("Percent Treated by Commodity (for Restricted Use Chemicals)") 
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Commodity, y = `Percent Treated`, fill = Description), 
     stat = "summary",
-    position = "dodge")
+    position = "dodge") +
+  ggtitle("Percent Treated by Commodity (for Restricted Use Chemicals)")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Commodity, y = `Applications (lb)`, fill = Description), 
     stat = "summary",
-    position = "dodge")
+    position = "dodge") +
+  ggtitle("Amount of Applications by Commodity (for Restricted Use Chemicals)")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Commodity, y = `Average Applications (lb/acre)`, fill = Description), 
     stat = "summary",
-    position = "dodge")
+    position = "dodge") + 
+  ggtitle("Average Applications by Commodity (for Restricted Use Chemicals)")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Commodity, y = `Average Number of Applications`, fill = Description), 
     stat = "summary",
-    position = "dodge")
+    position = "dodge") +
+  ggtitle("Average Number of Applications by Commidity (for Restricted Use Chemicals)")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Year, y = `Applications (lb)`, fill = Description), 
     stat = "summary",
-    position = "dodge")
+    position = "dodge") +
+  ggtitle("Applications Per Year (for Restricted Use Chemicals)")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Commodity, y = `Applications (lb)`, fill = Year), 
     stat = "summary",
-    position = "dodge")
+    position = "dodge") + 
+  ggtitle("Applications by Commodity (for Restricted Use Chemicals)")
+
+RestrictedUseChemicals.no <- filter(RestrictedUseChemicals, `Average RfD` < 1)
+
+ggplot(data = RestrictedUseChemicals.no) +
+  geom_jitter(mapping = aes(x = `Applications (lb)`, y = `Average RfD`, color = Commodity)) +
+  ggtitle("Average RfD vs. Applications (lb) (for Restricted Use Chemicals)")
+
+ggplot(data = RestrictedUseChemicals.no) +
+  geom_bar(mapping = aes(x = Description, y = `Average RfD`), stat = "identity") +
+  coord_flip() +
+  ggtitle("Average RfD for each Restricted Use Chemical (for Restricted Use Chemicals)")
+
+ggplot(data = RestrictedUseChemicals.no) + 
+  geom_bar(
+    mapping = aes(x = Commodity, y = `Average RfD`, fill = Description), 
+    stat = "summary",
+    position = "dodge") + 
+  ggtitle("Average RfD by Commodity (for Restricted Use Chemicals)")
+
+ggplot(data = RestrictedUseChemicals.no) +
+  geom_histogram(mapping = aes(x = `Average RfD`, fill = Commodity),  
+    position = "dodge",
+    binwidth = 0.005) + 
+  ggtitle("Average RfD Count (for Restricted Use Chemicals)")
+
 
 #Do we need visualizations for whole table?? 
 
