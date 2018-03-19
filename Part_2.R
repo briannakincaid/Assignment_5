@@ -393,36 +393,7 @@ RestrictedUseChemicals <- veg.1 %>%
   filter(Domain == "RESTRICTED USE CHEMICAL") %>%
   select(-State, -Geo, -Region) #They're all the same
 
-unique(RestrictedUseChemicals[,"Description"]) %>% print(n=28)
-#There are 28 restricted use chemicals
-# PARAQUAT
-# ABAMECTIN
-# BETA-CYFLUTHRIN
-# BIFENTHRIN
-# CHLORANTRANILIPROLE
-# CHLORPYRIFOS
-# CYFLUTHRIN
-# EMAMECTIN BENZOATE
-# ESFENVALERATE
-# IMIDACLOPRID
-# LAMBDA-CYHALOTHRIN
-# METHOMYL
-# NALED
-# OXYDEMETON-METHYL
-# PERMETHRIN
-# THIAMETHOXAM
-# ZETA-CYPERMETHRIN
-# DICHLOROPROPENE
-# DIAZINON
-# DIMETHOATE
-# DISULFOTON
-# FENPROPATHRIN
-# CYPERMETHRIN
-# PRONAMIDE
-# DIFLUBENZURON
-# GAMMA-CYHALOTHRIN
-# METHAMIDOPHOS
-# THIODICARB
+unique(RestrictedUseChemicals[,"Description"])
 
 uniquevals2 <- apply(RestrictedUseChemicals, 2, n_distinct) #counts the number of unique values in EACH column 
 names2_1 <- names(uniquevals2[uniquevals2==1]) #gives a vector of strings that represent the columns that only have one unique value
