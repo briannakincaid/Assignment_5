@@ -425,7 +425,7 @@ toxicity <- toxicity %>%
 #RfD is an estimate (with uncertainty spanning perhaps an order of magnitude) of
 #a daily exposure to the human population (including sensitive subgroups) that
 #is likely to be without an appreciable risk of deleterious effects during a
-#lifetime.
+#lifetime. We joined the average RfD values onto the RestrictedUseChemicals data set.
 
 toxval <- read_xlsx("toxval.xlsx")
 RestrictedUseChemicals <- RestrictedUseChemicals %>%
@@ -434,30 +434,36 @@ RestrictedUseChemicals <- RestrictedUseChemicals %>%
 
 ## VISUALIZE/EXPLORE
 
+####### RESTRICTED USE CHEMICALS -- GENERAL VISUALIZATION
+
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(mapping = aes(x = Commodity, y = `Percent Treated`), fill = "red", stat = "summary") +
-  ggtitle("Percent Treated by Commodity (for Restricted Use Chemicals)") 
-
+  labs(title = "Percent Treated by Commodity (for Restricted Use Chemicals)",
+       subtitle = "Average percent of area planted that was treated was greater for cauliflower")
+      
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Commodity, y = `Percent Treated`, fill = Description), 
     stat = "summary",
     position = "dodge") +
-  ggtitle("Percent Treated by Commodity (for Restricted Use Chemicals)")
+  labs(title = "Percent Treated by Commodity (for Restricted Use Chemicals)",
+       subtitle = "Average percent of area planted that was treated, broken down by the chemical it was treated with")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Commodity, y = `Applications (lb)`, fill = Description), 
     stat = "summary",
     position = "dodge") +
-  ggtitle("Amount of Applications by Commodity (for Restricted Use Chemicals)")
+  labs(title = "Amount of Applications by Commodity (for Restricted Use Chemicals)",
+        subtitle = "Amount of applications was greater for Broccoli, and Diazinon, Disulfoton, and Chlorpyrifos were used the most")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
     mapping = aes(x = Commodity, y = `Average Applications (lb/acre)`, fill = Description), 
     stat = "summary",
     position = "dodge") + 
-  ggtitle("Average Applications by Commodity (for Restricted Use Chemicals)")
+  labs(title = "Amount of Applications by Commodity (for Restricted Use Chemicals)",
+       subtitle = "Amount of applications was greater for Broccoli, and Diazinon, Disulfoton, and Chlorpyrifos were used the most")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
@@ -468,10 +474,18 @@ ggplot(data = RestrictedUseChemicals) +
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
-    mapping = aes(x = Year, y = `Applications (lb)`, fill = Description), 
+    mapping = aes(x = Year, y = `Applications (lb)`), 
     stat = "summary",
     position = "dodge") +
   ggtitle("Applications Per Year (for Restricted Use Chemicals)")
+
+ggplot(data = RestrictedUseChemicals) + 
+  geom_bar(
+    mapping = aes(x = Year, y = `Applications (lb)`, fill = Description), 
+    stat = "summary",
+    position = "dodge") +
+  ggtitle("Applications Per Year (for Restricted Use Chemicals)") +
+  labs(subtitle = "Broken down by the chemical applied")
 
 ggplot(data = RestrictedUseChemicals) + 
   geom_bar(
@@ -480,16 +494,22 @@ ggplot(data = RestrictedUseChemicals) +
     position = "dodge") + 
   ggtitle("Applications by Commodity (for Restricted Use Chemicals)")
 
+####### RESTRICTED USE CHEMICALS -- WITH TOXICITY
+
 RestrictedUseChemicals.no <- filter(RestrictedUseChemicals, `Average RfD` < 1)
+#CHLORANTRANILIPROLE has an abnormally high RfD value (which means it's less dangerous/toxic, and doesn't affect our analysis)
 
 ggplot(data = RestrictedUseChemicals.no) +
   geom_jitter(mapping = aes(x = `Applications (lb)`, y = `Average RfD`, color = Commodity)) +
   ggtitle("Average RfD vs. Applications (lb) (for Restricted Use Chemicals)")
 
+
 ggplot(data = RestrictedUseChemicals.no) +
   geom_bar(mapping = aes(x = Description, y = `Average RfD`), stat = "identity") +
   coord_flip() +
-  ggtitle("Average RfD for each Restricted Use Chemical (for Restricted Use Chemicals)")
+  ggtitle("Average RfD for each Restricted Use Chemical (for Restricted Use Chemicals)") 
+
+#EMAMECTIN BENZOATE has the lowest RfD value 
 
 ggplot(data = RestrictedUseChemicals.no) + 
   geom_bar(
@@ -504,8 +524,4 @@ ggplot(data = RestrictedUseChemicals.no) +
     binwidth = 0.005) + 
   ggtitle("Average RfD Count (for Restricted Use Chemicals)")
 
-
-#Do we need visualizations for whole table?? 
-
-
-## SLIDES AND SHINY
+#Use chemicals that have low RfD values MORE, especially with broccoli.
