@@ -24,7 +24,15 @@ The attached file veg1.xlsx was created using the USDA QuickStats system using t
 
 All other parameters were left open.
 
-The data was collected to gain insight about chemical treatments applied to food crops as fertilizer, insecticides, etc. 
+The file toxval.xlsx was created using the EPA Chemical Dashboard. The average RfD values were calculated based on the data available on the site. 
+
+The file toxicity.xlsx contains some information on experimental trials from ECOTOX. While this information can be useful, we did not end up using it in our analysis. 
+
+### Files that are relevant to Part 2:
+- Part_2.R (Cleaning/Analysis)
+- Part_2_Slides.html (Slides)
+- Part_2_Slides.Rmd (Slides)
+- Veg1 Data.R (Shiny App)
 
 
 
