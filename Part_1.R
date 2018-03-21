@@ -9,48 +9,48 @@ library(lubridate)
 # Retrieved data from NOAA Weather Station buoy 46035 at 57.026 N 177.738 W in the NOAA National Data Buoy Center
 # http://www.ndbc.noaa.gov/station_history.php?station=46035
 
-# WDIR 	
+# WDIR
 # Wind direction (the direction the wind is coming from in degrees clockwise from true N) during the same period used for WSPD. See Wind Averaging Methods
-# 
-# WSPD 	
+#
+# WSPD
 # Wind speed (m/s) averaged over an eight-minute period for buoys and a two-minute period for land stations. Reported Hourly. See Wind Averaging Methods.
-# 
-# GST 	
+#
+# GST
 # Peak 5 or 8 second gust speed (m/s) measured during the eight-minute or two-minute period. The 5 or 8 second period can be determined by payload, See the 	Sensor Reporting, Sampling, and Accuracy section.
-# 
-# WVHT 	
+#
+# WVHT
 # Significant wave height (meters) is calculated as the average of the highest one-third of all of the wave heights during the 20-minute sampling period. 	See the Wave Measurements section.
-# 
-# DPD 	
+#
+# DPD
 # Dominant wave period (seconds) is the period with the maximum wave energy. See the Wave Measurements section.
-# 
-# APD 	
+#
+# APD
 # Average wave period (seconds) of all waves during the 20-minute period. See the Wave Measurements section.
-# 
-# MWD 	
+#
+# MWD
 # The direction from which the waves at the dominant period (DPD) are coming. The units are degrees from true North, increasing clockwise, with North as 0 	(zero) degrees and East as 90 degrees. See the Wave Measurements section.
-# 
-# PRES 	
+#
+# PRES
 # Sea level pressure (hPa). For C-MAN sites and Great Lakes buoys, the recorded pressure is reduced to sea level using the method described in NWS 	Technical Procedures Bulletin 291 (11/14/80). ( labeled BAR in Historical files)
-# 
-# ATMP 	
+#
+# ATMP
 # Air temperature (Celsius). For sensor heights on buoys, see Hull Descriptions. For sensor heights at C-MAN stations, see C-MAN Sensor Locations
-# 
-# WTMP 	
+#
+# WTMP
 # Sea surface temperature (Celsius). For buoys the depth is referenced to the hull's waterline. For fixed platforms it varies with tide, but is referenced 	to, or near Mean Lower Low Water (MLLW).
-# 
-# DEWP 	
+#
+# DEWP
 # Dewpoint temperature taken at the same height as the air temperature measurement.
-# 
-# VIS 	
+#
+# VIS
 # Station visibility (nautical miles). Note that buoy stations are limited to reports from 0 to 1.6 nmi.
-# 
-# PTDY 	
+#
+# PTDY
 # Pressure Tendency is the direction (plus or minus) and the amount of pressure change (hPa)for a three hour period ending at the time of observation. (not 	in Historical files)
-# 
-# TIDE 	
-# The water level in feet above or below Mean Lower Low Water (MLLW). 
-# 
+#
+# TIDE
+# The water level in feet above or below Mean Lower Low Water (MLLW).
+#
 
 
 #adding column names now to make it easier if we ever wanted to come back for more analysis
@@ -76,7 +76,7 @@ yr1999 <- read_table2("46035 Data/46035h1999.txt", skip = 1, col_names = names[-
 
 #added tide measurement in 2000
 yr2000 <- read_table2("46035 Data/46035h2000.txt", skip = 2, col_names = names[-5])[,-17]
-    #this gives a warning message because there is no data for tide until part of the way through 2000, so the row length changes 
+    #this gives a warning message because there is no data for tide until part of the way through 2000, so the row length changes
 yr2001 <- read_table2("46035 Data/46035h2001.txt", skip = 1, col_names = names[-5])[,-17]
 yr2002 <- read_table2("46035 Data/46035h2002.txt", skip = 1, col_names = names[-5])[,-17]
 yr2003 <- read_table2("46035 Data/46035h2003.txt", skip = 1, col_names = names[-5])[,-17]
@@ -103,11 +103,11 @@ allyears$Year[allyears$Year < 100] <- allyears$Year[allyears$Year < 100] + 1900 
 ## TIDY/CLEAN (tidyr)
 
 # The goal here is to make the dataset tidy so that we can then more easily work with it. In order to make it tidy, we need to make it so
-# each variable has its own column, each observation has its own row, and each value has its own cell. 
+# each variable has its own column, each observation has its own row, and each value has its own cell.
 
 #Fix column types
 allyears <- allyears %>%
-  mutate(Year = as.numeric(Year), 
+  mutate(Year = as.numeric(Year),
          Day = as.numeric(Day),
          Month = as.numeric(Month),
          Hour = as.integer(Hour),
@@ -136,13 +136,13 @@ allyears <- allyears %>%
 ggplot(data = allyears) +
   geom_histogram(mapping = aes(x = AirTemperature))
 
-#The histogram shows that there are values near 1000, when realistically there shouldn't be any 
-#temperature measurement above 60 degrees Celsius. 
+#The histogram shows that there are values near 1000, when realistically there shouldn't be any
+#temperature measurement above 60 degrees Celsius.
 
 allyears$AirTemperature[allyears$AirTemperature > 60]
 
 #looking at this, all the values above 60 are 999. It seems that this data set uses 999 as a replacement
-#for NA values. 
+#for NA values.
 
 allyears$AirTemperature[allyears$AirTemperature > 60] <- NA
 
@@ -153,8 +153,8 @@ ggplot(data = allyears) +
 ggplot(data = allyears) +
   geom_histogram(mapping = aes(x = WaterTemperature))
 
-#Again, the histogram shows that there are values near 1000, when realistically there shouldn't be any 
-#temperature measurement above 60 degrees Celsius. 
+#Again, the histogram shows that there are values near 1000, when realistically there shouldn't be any
+#temperature measurement above 60 degrees Celsius.
 
 allyears$WaterTemperature[allyears$WaterTemperature > 60]
 
@@ -171,7 +171,7 @@ ggplot(data = allyears) +
 ggplot(data = allyears) +
   geom_histogram(mapping = aes(x = WindDirection))
 
-#Yet again, the histogram shows values near 1000. These must be replaced with NA. 
+#Yet again, the histogram shows values near 1000. These must be replaced with NA.
 
 allyears$WindDirection[allyears$WindDirection > 500] <- NA
 
@@ -188,7 +188,7 @@ ggplot(data = allyears) +
 allyears$WindSpeed[allyears$WindSpeed > 50]
 
 #It's clear that these are just rare high wind speeds, because all of the values above 50 are 99. They
-#must be NA. 
+#must be NA.
 
 allyears$WindSpeed[allyears$WindSpeed > 50] <- NA
 
@@ -246,7 +246,7 @@ ggplot(data = allyears) +
 
 #Let's look at...
 
-allyears$DominantWindDirection[allyears$DominantWindDirection > 750] 
+allyears$DominantWindDirection[allyears$DominantWindDirection > 750]
 
 #Definitely NA, all the values are 999
 
@@ -278,7 +278,7 @@ ggplot(data = allyears) +
 
 #Again, there seems to be a lot of values around 1000...
 
-allyears$DewpointTemperature[allyears$DewpointTemperature > 750] 
+allyears$DewpointTemperature[allyears$DewpointTemperature > 750]
 
 #They're all 999, so must be NA
 
@@ -316,7 +316,7 @@ allyears <- allyears %>%
 
 #We're going to only be looking at the data at noon everyday.
 allyears_noon <- allyears %>%
-  filter(Hour == 12) 
+  filter(Hour == 12)
 
 ########################
 
@@ -390,10 +390,10 @@ ggplot(data = allyears_noon) +
   geom_line(mapping = aes(x = Date, y = WaterTemperature, color = "Water Temperature")) +
   xlab("Time") +
   ylab("Temperature")
-      
 
 
-     
+
+
 #Relationship between air temperature and sea temperature
 
 ggplot(data = allyears_noon) +
@@ -407,7 +407,7 @@ ggplot(data = allyears_noon) +
 
 #Some data may be missing. What should you do about missing data? See “An introduction to data cleaning with R” by Edwin de Jonge and Mark van der Loo in the Contributed Documentation section at the bottom of the CRAN R page.
 
-#Has the mean temperature changed over the past 30 years? 
+#Has the mean temperature changed over the past 30 years?
 
 ggplot(data = temperature_summary_noon) +
   geom_line(mapping = aes(x = Year, y = AirTempMean, color = "Air Temperature")) +
@@ -415,7 +415,7 @@ ggplot(data = temperature_summary_noon) +
   xlab("Year") +
   ylab("Mean Temperature (By Year)")
 
-#What statistical methods can you use to test if the change is statistically significant? 
+#What statistical methods can you use to test if the change is statistically significant?
 
 t.test(filter(allyears_noon, Year == 2017)$AirTemperature, filter(allyears_noon, Year == 2000)$AirTemperature)
 t.test(filter(allyears_noon, Year == 2017)$WaterTemperature, filter(allyears_noon, Year == 2000)$WaterTemperature)
@@ -423,13 +423,13 @@ t.test(filter(allyears_noon, Year == 2017)$WaterTemperature, filter(allyears_noo
 
 
 
-# You been instructed to use only one sample per day day out of 24 daily hourly temperature readings. 
-# Has your sampling affected your evaluation of temperature change? In what way? 
+# You been instructed to use only one sample per day day out of 24 daily hourly temperature readings.
+# Has your sampling affected your evaluation of temperature change? In what way?
 # Explain and demonstrate.
 
-#Conduct a ONE SAMPLE T-TEST. This compares the mean of a sample to a population with a known mean. 
+#Conduct a ONE SAMPLE T-TEST. This compares the mean of a sample to a population with a known mean.
 #Here, the null hypothesis is that there is no significant difference between the mean in the population
-#from which your sample was drawn and the mean of the known population. 
+#from which your sample was drawn and the mean of the known population.
 
 t.test(filter(allyears_noon, Year == 2017)$WaterTemperature, mu = 6.157119)
 #cannot reject the null hypothesis (true mean is equal to 6.157119) here because p-value = 0.8808
@@ -453,5 +453,5 @@ t.test(filter(allyears_noon, Year == 2000)$AirTemperature, mu = 3.1507410)
 
 ## SLIDES AND SHINY
 
-    # Assemble your work on the Station 45035 data into an R-Driven slide presentation (no google slides or powerpoint, please). Also make a Shiny Dashboard that lets visitors to your dashboard explore what you have learned about 
+    # Assemble your work on the Station 45035 data into an R-Driven slide presentation (no google slides or powerpoint, please). Also make a Shiny Dashboard that lets visitors to your dashboard explore what you have learned about
     # buoy observations of air and water temperature in the southern Bering Sea.
