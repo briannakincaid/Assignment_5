@@ -13,6 +13,10 @@ library(shinydashboard)
 library(tidyverse)
 library(ggplot2)
 library(lubridate)
+library(dplyr)
+library(stringr)
+
+names = c("Year", "Month", "Day", "Hour", "Minute", "WindDirection", "WindSpeed", "Gust",  "WaveHeight",   "DominantWavePeriod",   "AverageWavePeriod", "DominantWindDirection",   "SeaLevelPressure",  "AirTemperature",  "WaterTemperature",  "DewpointTemperature",  "Visibility", "Tide")
 
 yr1985 <- read_table2("46035 Data/46035h1985.txt", skip = 1, col_names = names[-5][-17])
 yr1986 <- read_table2("46035 Data/46035h1986.txt", skip = 1, col_names = names[-5][-17])
@@ -56,6 +60,42 @@ yr2017 <- read_table2("46035 Data/46035h2017.txt", skip = 2, col_names = names)[
 
 allyears <- rbind(yr1985,yr1986, yr1987, yr1988, yr1989, yr1990, yr1991, yr1992, yr1993, yr1994, yr1995, yr1996, yr1997, yr1998, yr1999, yr2000, yr2001, yr2002, yr2003, yr2004, yr2005, yr2006, yr2007, yr2008, yr2009, yr2010, yr2011, yr2012, yr2014, yr2015, yr2016, yr2017)
 
+
+#Fix column types
+allyears <- allyears %>%
+  mutate(Year = as.numeric(Year), 
+         Day = as.numeric(Day),
+         Month = as.numeric(Month),
+         Hour = as.integer(Hour),
+         WindDirection = as.integer(WindDirection),
+         WindSpeed = as.numeric(WindSpeed),
+         Gust = as.numeric(Gust),
+         WaveHeight = as.numeric(WaveHeight),
+         DominantWavePeriod = as.numeric(DominantWavePeriod),
+         AverageWavePeriod = as.numeric(AverageWavePeriod),
+         DominantWindDirection = as.integer(DominantWindDirection),
+         SeaLevelPressure = as.numeric(SeaLevelPressure),
+         AirTemperature = as.numeric(AirTemperature),
+         WaterTemperature = as.numeric(WaterTemperature),
+         DewpointTemperature = as.numeric(DewpointTemperature),
+         Visibility = as.numeric(Visibility))
+#Add Date
+allyears <- allyears %>%
+  mutate(Date = make_date(Year, Month, Day))
+
+allyears$AirTemperature[allyears$AirTemperature > 60] <- NA
+allyears$WaterTemperature[allyears$WaterTemperature > 60] <- NA
+
+#Add day of year
+allyears <- allyears %>%
+  mutate(
+    DayofYear = as.numeric(format(allyears$Date, "%j"))
+  )
+
+#We're going to only be looking at the data at noon everyday.
+allyears_noon <- allyears %>%
+  filter(Hour == 12)
+
 # Define UI for application that draws various graphs.
 ui <- dashboardPage(
   dashboardHeader(
@@ -82,13 +122,7 @@ ui <- dashboardPage(
           )
         ),
         fluidRow(
-          box(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-          ),
+          box(),
           box(
             plotOutput("noonWaterTemp")
           )
@@ -97,22 +131,26 @@ ui <- dashboardPage(
     )
 # Define server logic required to draw the various graphs.
 server <- function(input, output) {
-  set.seed(300)
-  allyears_noon <- rnorm(500)
   output$noonAirTemp <- renderPlot({
-    x    <- allyears_noon[13]
+    x    <- as.numeric(unlist(na.omit(allyears_noon[13])))
     bins <- seq(min(x), max(x), length.out = input$bins + 1)
     
     # draw the histogram with the specified number of bins
-    hist(x, breaks = bins, xlim = c(-13, 13), ylim = c(0,200), col = 'darkgray', border = 'white', plot = TRUE)
+    hist(x, breaks = bins, main = "Histogram of Air Temperature at Noon", 
+         xlim = c(min(x), max(x)), ylim = c(0,200), 
+         xlab = "Air Temperature in Celsius",
+         col = 'darkgray', border = 'white', plot = TRUE)
     
   })
   output$noonWaterTemp <- renderPlot({
-    x    <- allyears_noon[14]
+    x    <- as.numeric(unlist(na.omit(allyears_noon[14])))
     bins <- seq(min(x), max(x), length.out = input$bins + 1)
     
     # draw the histogram with the specified number of bins
-    hist(x, breaks = bins, xlim = c(0, 13), ylim = c(0,300), col = 'darkgray', border = 'white', plot = TRUE)
+    hist(x, breaks = bins, main = "Histogram of Water Temperature at Noon",
+         xlim = c(min(x), max(x)), ylim = c(0,300),
+         xlab = "Water Temperature in Celsius",
+         col = 'darkgray', border = 'white', plot = TRUE)
   })
   
   
